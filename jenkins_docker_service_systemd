@@ -1,0 +1,27 @@
+[Unit]
+Description=Daemon for %N
+Requires=docker.service network-online.target
+After=docker.service network-online.target
+
+[Service]
+SyslogIdentifier=docker.%N
+Restart=on-failure
+StartLimitInterval=20
+StartLimitBurst=5
+TimeoutStartSec=0
+RestartSec=5
+Environment=IMAGE=jenkins/jenkins:2.427
+ExecStartPre=-/usr/bin/docker kill %N
+ExecStartPre=-/usr/bin/docker rm %N
+ExecStart=/usr/bin/docker run \
+  --name=%N \
+  --hostname=%N \
+  -p 8080:8080 \
+  -p 50000:50000 \
+  --volume=/var/docker/jenkins_home/:/var/jenkins_home:rw \
+  $IMAGE
+ExecStop=-/usr/bin/docker pull $IMAGE
+ExecStop=-/usr/bin/docker stop --time 5 %N
+
+[Install]
+WantedBy=multi-user.target
